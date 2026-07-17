@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: compliance
+      POSTGRES_USER: compliance
+      POSTGRES_PASSWORD: compliance_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U compliance"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend-spring
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/compliance
+      SPRING_DATASOURCE_USERNAME: compliance
+      SPRING_DATASOURCE_PASSWORD: compliance_dev
+      SPRING_FLYWAY_ENABLED: "true"
+      APP_AI_SERVICE_BASE_URL: http://ai-service:8000
+      APP_JWT_SECRET: dev-secret-key-change-in-production-minimum-32-chars
+      APP_JWT_ACCESS_TOKEN_EXPIRATION: 1800000
+      APP_JWT_REFRESH_TOKEN_EXPIRATION: 604800000
+      APP_STORAGE_LOCAL_PATH: /app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - storage:/app/storage
+
+  ai-service:
+    build: ./ai-service
+    ports:
+      - "8000:8000"
+    environment:
+      SPRING_BACKEND_URL: http://backend:8080
+      AI_API_KEY: ""
+      STORAGE_PATH: /app/storage
+      CRAWLER_RATE_LIMIT: "2.0"
+      CRAWLER_TIMEOUT: "30"
+    volumes:
+      - storage:/app/storage
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  storage:
