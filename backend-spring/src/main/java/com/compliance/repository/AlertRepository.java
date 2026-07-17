@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,6 +18,6 @@ public interface AlertRepository extends JpaRepository<Alert, UUID> {
     long countByTenantIdAndIsReadFalse(UUID tenantId);
 
     @Modifying
-    @Query("UPDATE Alert a SET a.isRead = true, a.readAt = CURRENT_TIMESTAMP WHERE a.tenantId = :tenantId AND a.isRead = false")
-    int markAllRead(UUID tenantId);
+    @Query("UPDATE Alert a SET a.isRead = true, a.readAt = :now WHERE a.tenantId = :tenantId AND a.isRead = false")
+    int markAllRead(UUID tenantId, Instant now);
 }

@@ -29,6 +29,6 @@ public interface ObligationRepository extends JpaRepository<Obligation, UUID>, J
     @Query("SELECT COUNT(o) FROM Obligation o WHERE o.tenantId = :tenantId AND o.applicabilityStatus = :status")
     long countByTenantIdAndApplicabilityStatus(UUID tenantId, ApplicabilityStatus status);
 
-    @Query("SELECT o FROM Obligation o WHERE o.tenantId = :tenantId AND :dept MEMBER OF o.impactedDepartments")
+    @Query(value = "SELECT * FROM obligations WHERE tenant_id = :tenantId AND CAST(impacted_departments AS VARCHAR) LIKE CONCAT('%', :dept, '%')", nativeQuery = true)
     List<Obligation> findByTenantIdAndDepartment(UUID tenantId, String dept);
 }

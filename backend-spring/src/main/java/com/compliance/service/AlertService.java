@@ -53,7 +53,7 @@ public class AlertService {
 
     @Transactional
     public void markAllRead() {
-        alertRepository.markAllRead(TenantContext.getTenantId());
+        alertRepository.markAllRead(TenantContext.getTenantId(), Instant.now());
     }
 
     public void createAlert(UUID tenantId, UUID userId, AlertType type, String title,
