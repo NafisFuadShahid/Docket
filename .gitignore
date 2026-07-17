@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+storage/
+*.class
+build/
+.gradle/
+node_modules/
+.next/
