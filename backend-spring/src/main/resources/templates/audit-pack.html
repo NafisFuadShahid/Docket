@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="'Audit Pack: ' + ${circular.title}">Audit Pack</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; color: #1a1a1a; }
+        h1 { border-bottom: 3px solid #1e40af; padding-bottom: 12px; font-size: 1.5rem; }
+        h2 { color: #1e40af; margin-top: 2rem; font-size: 1.2rem; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+        th, td { border: 1px solid #d1d5db; padding: 8px 12px; text-align: left; }
+        th { background: #f3f4f6; font-weight: 600; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 500; }
+        .badge-critical { background: #fef2f2; color: #dc2626; }
+        .badge-high { background: #fff7ed; color: #ea580c; }
+        .badge-medium { background: #fefce8; color: #ca8a04; }
+        .badge-low { background: #f0fdf4; color: #16a34a; }
+        .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 1rem 0; }
+        .meta dt { font-weight: 600; color: #4b5563; }
+        .meta dd { margin: 0; }
+        .gap { color: #dc2626; font-weight: 600; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #d1d5db; font-size: 0.8rem; color: #6b7280; }
+    </style>
+</head>
+<body>
+    <h1 th:text="'Compliance Audit Pack: ' + ${circular.title}">Audit Pack</h1>
+
+    <h2>Circular Information</h2>
+    <dl class="meta">
+        <dt>Circular Number</dt><dd th:text="${circular.circularNumber} ?: 'N/A'">-</dd>
+        <dt>Issued Date</dt><dd th:text="${circular.issuedDate} ?: 'N/A'">-</dd>
+        <dt>Department</dt><dd th:text="${circular.department} ?: 'N/A'">-</dd>
+        <dt>Status</dt><dd th:text="${circular.status}">-</dd>
+        <dt>Source URL</dt><dd><a th:href="${circular.sourceUrl}" th:text="${circular.sourceUrl} ?: 'N/A'">-</a></dd>
+        <dt>Language</dt><dd th:text="${circular.language}">-</dd>
+    </dl>
+
+    <h2>Document Versions</h2>
+    <table>
+        <thead><tr><th>Version</th><th>File</th><th>SHA-256</th><th>Downloaded</th></tr></thead>
+        <tbody>
+            <tr th:each="v : ${versions}">
+                <td th:text="${v.versionNumber}">1</td>
+                <td th:text="${v.fileName}">-</td>
+                <td th:text="${#strings.abbreviate(v.sha256Hash, 16)}">-</td>
+                <td th:text="${v.downloadedAt}">-</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Obligations (<span th:text="${#lists.size(obligations)}">0</span>)</h2>
+    <table>
+        <thead><tr><th>Title</th><th>Severity</th><th>Review</th><th>Applicability</th><th>Deadline</th></tr></thead>
+        <tbody>
+            <tr th:each="o : ${obligations}">
+                <td th:text="${o.obligationTitle}">-</td>
+                <td><span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(o.severity.name())}" th:text="${o.severity}">-</span></td>
+                <td th:text="${o.reviewStatus}">-</td>
+                <td th:text="${o.applicabilityStatus}">-</td>
+                <td th:text="${o.deadline} ?: 'N/A'">-</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Tasks (<span th:text="${#lists.size(tasks)}">0</span>)</h2>
+    <table>
+        <thead><tr><th>Title</th><th>Department</th><th>Status</th><th>Priority</th><th>Due Date</th></tr></thead>
+        <tbody>
+            <tr th:each="t : ${tasks}">
+                <td th:text="${t.title}">-</td>
+                <td th:text="${t.department}">-</td>
+                <td th:text="${t.status}">-</td>
+                <td th:text="${t.priority}">-</td>
+                <td th:text="${t.dueDate} ?: 'N/A'">-</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Evidence (<span th:text="${#lists.size(evidence)}">0</span>)</h2>
+    <table>
+        <thead><tr><th>File</th><th>Type</th><th>SHA-256</th><th>Uploaded</th></tr></thead>
+        <tbody>
+            <tr th:each="e : ${evidence}">
+                <td th:text="${e.fileName}">-</td>
+                <td th:text="${e.evidenceType}">-</td>
+                <td th:text="${#strings.abbreviate(e.sha256Hash, 16)}">-</td>
+                <td th:text="${e.createdAt}">-</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Summary</h2>
+    <dl class="meta">
+        <dt>Total Obligations</dt><dd th:text="${packData['obligationCount']}">0</dd>
+        <dt>Total Tasks</dt><dd th:text="${packData['taskCount']}">0</dd>
+        <dt>Completed Tasks</dt><dd th:text="${packData['completedTasks']}">0</dd>
+        <dt>Evidence Files</dt><dd th:text="${packData['evidenceCount']}">0</dd>
+        <dt>Evidence Gaps</dt><dd th:text="${packData['evidenceGaps']}" th:class="${packData['evidenceGaps'] > 0} ? 'gap'">0</dd>
+    </dl>
+
+    <div class="footer">
+        <p>Generated: <span th:text="${packData['generatedAt']}">-</span></p>
+        <p>This audit pack is auto-generated. Verify all data against source documents.</p>
+    </div>
+</body>
+</html>
