@@ -21,12 +21,12 @@ export default function AlertsPage() {
   const { data: alerts, loading, refetch } = useApi<Alert[]>("/api/v1/alerts");
 
   const markRead = async (id: string) => {
-    await api.patch(`/api/v1/alerts/${id}/read`);
+    await api.put(`/api/v1/alerts/${id}/read`);
     refetch();
   };
 
   const markAllRead = async () => {
-    await api.patch("/api/v1/alerts/read-all");
+    await api.put("/api/v1/alerts/read-all");
     refetch();
   };
 

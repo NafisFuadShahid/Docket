@@ -10,52 +10,16 @@ class ObligationExtractorProvider(Protocol):
     def extract(self, request: ExtractObligationsRequest) -> ObligationExtractionResult: ...
 
 
-class MockObligationExtractor:
-    """Deterministic mock extractor for demo/testing when no AI API key is configured."""
+class NoOpObligationExtractor:
+    """Returns empty results when no AI API key is configured."""
 
     def extract(self, request: ExtractObligationsRequest) -> ObligationExtractionResult:
-        text = request.text[:500]
-        obligations = [
-            ExtractedObligation(
-                obligation_title=f"Comply with {request.circular_number or 'regulatory directive'}",
-                obligation_detail=f"Financial institutions must comply with the requirements outlined in this circular. {text[:200]}...",
-                source_quote=text[:150],
-                source_page=1,
-                regulator=request.regulator,
-                circular_number=request.circular_number,
-                source_department=request.department,
-                affected_institution_types=["scheduled_bank"],
-                affected_business_lines=["general"],
-                impacted_departments=["compliance", "operations"],
-                required_actions=["Review circular", "Update internal policy", "Train relevant staff", "Submit compliance report"],
-                required_evidence=["Updated policy document", "Training records", "Compliance report"],
-                severity="MEDIUM",
-                confidence=0.75,
-                rationale="Mock extraction — review required. Actual obligations should be verified by compliance officer.",
-            ),
-            ExtractedObligation(
-                obligation_title=f"Report compliance status for {request.circular_number or 'this circular'}",
-                obligation_detail="Submit compliance status report to the regulator within the prescribed timeline.",
-                source_quote="Report to be submitted within the stipulated timeframe...",
-                source_page=2,
-                regulator=request.regulator,
-                circular_number=request.circular_number,
-                source_department=request.department,
-                affected_institution_types=["scheduled_bank"],
-                impacted_departments=["compliance"],
-                required_actions=["Prepare compliance report", "Submit to regulator"],
-                required_evidence=["Compliance report", "Submission acknowledgement"],
-                severity="HIGH",
-                confidence=0.70,
-                rationale="Mock extraction — standard reporting obligation inferred from circular text.",
-            ),
-        ]
-        logger.info("mock_extraction", circular_id=request.circular_id, obligations=len(obligations))
+        logger.info("extraction_skipped_no_api_key", circular_id=request.circular_id)
         return ObligationExtractionResult(
             circular_id=request.circular_id,
             tenant_id=request.tenant_id,
-            obligations=obligations,
-            model_used="mock-provider",
+            obligations=[],
+            model_used="none",
         )
 
 
@@ -123,10 +87,10 @@ Return a JSON array of obligations. Be precise and cite the source text."""
             )
         except Exception as e:
             logger.error("ai_extraction_failed", error=str(e))
-            return MockObligationExtractor().extract(request)
+            return NoOpObligationExtractor().extract(request)
 
 
 def get_extractor() -> ObligationExtractorProvider:
     if settings.has_ai_key:
         return OpenAIObligationExtractor()
-    return MockObligationExtractor()
+    return NoOpObligationExtractor()

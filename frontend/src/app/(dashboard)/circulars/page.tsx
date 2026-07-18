@@ -23,7 +23,7 @@ export default function CircularsPage() {
   const { data, loading, refetch } = useApi<Page<Circular>>(path, [page, status, search]);
 
   const triggerCrawl = async (sourceId: string) => {
-    await api.post(`/api/v1/circulars/crawl/${sourceId}`);
+    await api.post(`/api/v1/sources/${sourceId}/crawl`);
     refetch();
   };
 

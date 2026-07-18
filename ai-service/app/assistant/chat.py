@@ -49,20 +49,10 @@ class ComplianceAssistant:
             return self._mock_response(request)
 
     def _mock_response(self, request: AssistantRequest) -> AssistantResponse:
-        msg = request.message.lower()
-        if "overdue" in msg:
-            content = "Based on the current task data, there are overdue tasks that need attention. [Source: Task Dashboard]. Please check the Tasks page for the full list of overdue items with their deadlines and assigned departments."
-        elif "circular" in msg or "latest" in msg:
-            content = "The most recent circulars can be found in the Regulatory Inbox. [Source: Regulatory Inbox]. Each circular includes extracted obligations, applicability status, and linked tasks."
-        elif "memo" in msg or "draft" in msg:
-            content = "I can help draft an internal memo. However, in demo mode, I cannot generate full text. When an AI API key is configured, I can draft memos based on specific circulars and obligations. [Source: System Configuration]."
-        else:
-            content = "I'm the compliance assistant running in demo mode. With a configured AI API key, I can answer questions about circulars, obligations, tasks, and evidence with full citations. [Source: System Configuration]. Please configure AI_API_KEY to enable full functionality."
-
         return AssistantResponse(
-            content=content,
-            citations=[{"source": "demo_mode", "note": "Mock response — configure AI_API_KEY for real answers"}],
-            model_used="mock-provider",
+            content="AI assistant is not available. Please configure AI_API_KEY to enable this feature.",
+            citations=[],
+            model_used="none",
         )
 
     def _extract_citations(self, text: str) -> list[dict]:

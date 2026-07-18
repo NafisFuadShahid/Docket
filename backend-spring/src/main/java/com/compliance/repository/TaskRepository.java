@@ -16,6 +16,7 @@ import java.util.UUID;
 public interface TaskRepository extends JpaRepository<Task, UUID>, JpaSpecificationExecutor<Task> {
     Optional<Task> findByIdAndTenantId(UUID id, UUID tenantId);
     Page<Task> findByTenantId(UUID tenantId, Pageable pageable);
+    List<Task> findByTenantId(UUID tenantId);
     List<Task> findByTenantIdAndDepartment(UUID tenantId, String department);
     List<Task> findByObligationId(UUID obligationId);
 

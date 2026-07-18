@@ -56,6 +56,19 @@ public class CircularController {
         return text != null ? ResponseEntity.ok(text) : ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/circulars/{id}/extract")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','COMPLIANCE_ADMIN')")
+    public ResponseEntity<Void> triggerExtraction(@PathVariable UUID id) {
+        circularService.triggerExtraction(id);
+        return ResponseEntity.accepted().build();
+    }
+
+    @PostMapping("/internal/pdf-downloaded")
+    public ResponseEntity<Void> handlePdfDownloaded(@RequestBody PdfDownloadCallback callback) {
+        circularService.handlePdfDownloaded(callback);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/internal/crawl-results")
     public ResponseEntity<Void> handleCrawlResults(@RequestBody CrawlResultCallback callback) {
         circularService.handleCrawlResults(callback);

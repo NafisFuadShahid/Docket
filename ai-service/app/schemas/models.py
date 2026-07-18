@@ -61,12 +61,19 @@ class AssistantRequest(BaseModel):
     message: str
     conversation_id: str | None = None
     tenant_id: str
+    context: str | None = None
 
 
 class AssistantResponse(BaseModel):
     content: str
     citations: list[dict] = Field(default_factory=list)
     model_used: str | None = None
+
+
+class DownloadPdfRequest(BaseModel):
+    circular_id: str
+    pdf_url: str
+    language: str | None = None
 
 
 class CrawlRequest(BaseModel):

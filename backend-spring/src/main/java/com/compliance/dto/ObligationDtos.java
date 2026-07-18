@@ -1,5 +1,7 @@
 package com.compliance.dto;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -64,6 +66,7 @@ public class ObligationDtos {
     }
 
     @Data
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public static class ObligationExtractionCallback {
         private UUID circularId;
         private UUID tenantId;
@@ -72,6 +75,7 @@ public class ObligationDtos {
     }
 
     @Data
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public static class ExtractedObligation {
         private String obligationTitle;
         private String obligationDetail;

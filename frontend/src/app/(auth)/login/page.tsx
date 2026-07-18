@@ -47,7 +47,7 @@ function LoginForm() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@example.com"
+                placeholder="you@institution.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -58,7 +58,7 @@ function LoginForm() {
               <Input
                 id="password"
                 type="password"
-                placeholder="password123"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -68,9 +68,6 @@ function LoginForm() {
             <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={loading}>
               {loading ? "Signing in..." : "Sign in"}
             </Button>
-            <p className="text-center text-xs text-muted-foreground">
-              Demo: admin@example.com / password123
-            </p>
           </form>
         </CardContent>
       </Card>
