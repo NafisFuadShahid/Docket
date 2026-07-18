@@ -104,7 +104,7 @@ function PasswordTab() {
 }
 
 function InstitutionTab() {
-  const { data: profile, refetch } = useApi<InstitutionProfile>("/api/v1/institution/profile");
+  const { data: profile, refetch } = useApi<InstitutionProfile>("/api/v1/institution-profile");
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Partial<InstitutionProfile>>({});
 
@@ -113,7 +113,7 @@ function InstitutionTab() {
   }, [profile]);
 
   const save = async () => {
-    await api.put("/api/v1/institution/profile", form);
+    await api.put("/api/v1/institution-profile", form);
     setEditing(false);
     refetch();
   };

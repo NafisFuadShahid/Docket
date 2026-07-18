@@ -28,9 +28,9 @@ export default function ReviewsPage() {
     if (!selected) return;
     setActing(true);
     try {
-      await api.post(`/api/v1/obligations/${selected.id}/review`, {
+      await api.put(`/api/v1/obligations/${selected.id}/review`, {
         action,
-        notes: notes || undefined,
+        reviewerNotes: notes || undefined,
       });
       setSelected(null);
       setNotes("");
