@@ -10,6 +10,7 @@ from app.embeddings.jina import jina_embed
 RAG_DIR = Path(settings.STORAGE_PATH) / "lightrag"
 JINA_EMBEDDING_DIM = 1024
 _rag_instance: LightRAG | None = None
+_initialized = False
 
 
 async def _groq_llm_func(prompt, system_prompt=None, history_messages=None, keyword_extraction=False, **kwargs) -> str:
@@ -35,42 +36,43 @@ async def _jina_embedding_func(texts: list[str]) -> list[list[float]]:
     return await jina_embed(texts)
 
 
-def get_rag() -> LightRAG | None:
-    global _rag_instance
-    if _rag_instance is not None:
+async def get_rag() -> LightRAG | None:
+    global _rag_instance, _initialized
+    if _rag_instance is not None and _initialized:
         return _rag_instance
 
-    if not settings.has_ai_key:
-        logger.info("rag_skip_no_ai_key")
-        return None
-
-    if not settings.JINA_API_KEY:
-        logger.info("rag_skip_no_jina_key")
+    if not settings.has_ai_key or not settings.JINA_API_KEY:
         return None
 
     RAG_DIR.mkdir(parents=True, exist_ok=True)
 
-    _rag_instance = LightRAG(
-        working_dir=str(RAG_DIR),
-        llm_model_func=_groq_llm_func,
-        llm_model_name=settings.AI_MODEL,
-        embedding_func=EmbeddingFunc(
-            embedding_dim=JINA_EMBEDDING_DIM,
-            max_token_size=8192,
-            func=_jina_embedding_func,
-        ),
-        chunk_token_size=500,
-        chunk_overlap_token_size=100,
-        max_parallel_insert=2,
-        llm_model_max_async=2,
-        embedding_func_max_async=4,
-    )
-    logger.info("rag_initialized", working_dir=str(RAG_DIR))
+    if _rag_instance is None:
+        _rag_instance = LightRAG(
+            working_dir=str(RAG_DIR),
+            llm_model_func=_groq_llm_func,
+            llm_model_name=settings.AI_MODEL,
+            embedding_func=EmbeddingFunc(
+                embedding_dim=JINA_EMBEDDING_DIM,
+                max_token_size=8192,
+                func=_jina_embedding_func,
+            ),
+            chunk_token_size=500,
+            chunk_overlap_token_size=100,
+            max_parallel_insert=2,
+            llm_model_max_async=2,
+            embedding_func_max_async=4,
+        )
+
+    if not _initialized:
+        await _rag_instance.initialize_storages()
+        _initialized = True
+        logger.info("rag_initialized", working_dir=str(RAG_DIR))
+
     return _rag_instance
 
 
 async def index_document(doc_id: str, text: str, metadata: dict | None = None):
-    rag = get_rag()
+    rag = await get_rag()
     if rag is None:
         return
     try:
@@ -81,7 +83,7 @@ async def index_document(doc_id: str, text: str, metadata: dict | None = None):
 
 
 async def query(question: str, mode: str = "hybrid") -> str:
-    rag = get_rag()
+    rag = await get_rag()
     if rag is None:
         return ""
     try:
