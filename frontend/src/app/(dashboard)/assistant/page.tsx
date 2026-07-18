@@ -5,7 +5,6 @@ import { api } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, Send, User } from "lucide-react";
 
 interface Message {
@@ -19,28 +18,30 @@ export default function AssistantPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   const send = async () => {
-    if (!input.trim() || loading) return;
-    const userMsg: Message = { role: "user", content: input };
-    setMessages((prev) => [...prev, userMsg]);
+    const text = input.trim();
+    if (!text || loading) return;
+    setMessages((prev) => [...prev, { role: "user", content: text }]);
     setInput("");
     setLoading(true);
 
     try {
-      const res = await api.post<{ content: string; citations: Array<{ source: string }>; conversation_id: string }>(
+      const res = await api.post<Record<string, unknown>>(
         "/api/v1/assistant/chat",
-        {
-          message: input,
-          conversation_id: conversationId,
-        },
+        { message: text, conversation_id: conversationId },
       );
-      if (res.conversation_id) setConversationId(res.conversation_id);
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: res.content, citations: res.citations?.map((c) => c.source) },
-      ]);
+      const convId = res?.conversation_id;
+      if (typeof convId === "string") setConversationId(convId);
+
+      const content = typeof res?.content === "string" ? res.content : "No response received.";
+      const rawCitations = Array.isArray(res?.citations) ? res.citations : [];
+      const citations = rawCitations
+        .map((c: unknown) => (typeof c === "string" ? c : typeof c === "object" && c !== null && "source" in c ? String((c as { source: unknown }).source) : ""))
+        .filter(Boolean);
+
+      setMessages((prev) => [...prev, { role: "assistant", content, citations }]);
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -48,14 +49,7 @@ export default function AssistantPage() {
       ]);
     } finally {
       setLoading(false);
-      setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      send();
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
   };
 
@@ -64,7 +58,7 @@ export default function AssistantPage() {
       <h1 className="text-2xl font-bold mb-4">AI Compliance Assistant</h1>
 
       <Card className="flex-1 flex flex-col overflow-hidden">
-        <ScrollArea className="flex-1 p-4">
+        <div className="flex-1 overflow-y-auto p-4">
           {messages.length === 0 ? (
             <div className="flex h-full items-center justify-center text-center py-20">
               <div>
@@ -84,7 +78,7 @@ export default function AssistantPage() {
                       variant="outline"
                       size="sm"
                       className="text-xs"
-                      onClick={() => { setInput(q); }}
+                      onClick={() => setInput(q)}
                     >
                       {q}
                     </Button>
@@ -139,10 +133,10 @@ export default function AssistantPage() {
                   </div>
                 </div>
               )}
-              <div ref={scrollRef} />
+              <div ref={bottomRef} />
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         <CardContent className="border-t p-3">
           <div className="flex gap-2">
@@ -150,7 +144,12 @@ export default function AssistantPage() {
               placeholder="Ask a compliance question..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
               rows={1}
               className="min-h-[40px] max-h-[120px] resize-none flex-1"
             />
