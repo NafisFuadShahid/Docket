@@ -40,7 +40,7 @@ export default function TaskDetailPage({
   };
 
   const updateStatus = async (status: string) => {
-    await api.patch(`/api/v1/tasks/${id}`, { status });
+    await api.put(`/api/v1/tasks/${id}`, { status });
     refetch();
   };
 

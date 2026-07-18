@@ -41,6 +41,45 @@ def extract_text_from_pdf(file_path: str, document_version_id: str) -> Extractio
             full_text = "\n\n".join(pages)
 
             if not full_text.strip():
+                # Try OCR fallback for scanned documents
+                try:
+                    import pytesseract
+                    from PIL import Image
+                    import io
+
+                    ocr_pages = []
+                    ocr_chunks = []
+                    for i, page in enumerate(pdf.pages):
+                        img = page.to_image(resolution=300)
+                        pil_img = img.original
+                        ocr_text = pytesseract.image_to_string(pil_img, lang='eng+ben')
+                        ocr_pages.append(ocr_text)
+                        if ocr_text.strip():
+                            ocr_chunks.append({
+                                "page": i + 1,
+                                "text": ocr_text,
+                                "char_count": len(ocr_text),
+                            })
+
+                    full_text = "\n\n".join(ocr_pages)
+                    chunks = ocr_chunks
+
+                    if full_text.strip():
+                        logger.info("ocr_extracted", path=file_path, pages=len(pdf.pages), chars=len(full_text))
+                        return ExtractionResult(
+                            document_version_id=document_version_id,
+                            full_text=full_text,
+                            extraction_method="OCR",
+                            page_count=len(pdf.pages),
+                            chunks=chunks,
+                            status="COMPLETED",
+                        )
+                except ImportError:
+                    logger.warning("ocr_not_available", path=file_path)
+                except Exception as e:
+                    logger.warning("ocr_failed", path=file_path, error=str(e))
+
+                # If OCR also fails or not available, fall back to manual review
                 logger.warning("no_text_extracted", path=file_path, pages=len(pdf.pages))
                 return ExtractionResult(
                     document_version_id=document_version_id,

@@ -1,5 +1,7 @@
 package com.compliance.dto;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 
 import java.time.Instant;
@@ -61,12 +63,14 @@ public class CircularDtos {
     }
 
     @Data
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public static class CrawlResultCallback {
         private UUID sourceId;
         private List<ParsedCircular> circulars;
     }
 
     @Data
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public static class ParsedCircular {
         private String circularNumber;
         private String title;
@@ -81,6 +85,18 @@ public class CircularDtos {
     }
 
     @Data
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+    public static class PdfDownloadCallback {
+        private UUID circularId;
+        private String filePath;
+        private String fileName;
+        private String sha256Hash;
+        private int fileSize;
+        private String language;
+    }
+
+    @Data
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public static class ExtractionResultCallback {
         private UUID documentVersionId;
         private String fullText;

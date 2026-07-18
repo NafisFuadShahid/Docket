@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "PreCommit": [
+      {
+        "command": "bash .claude/hooks/block-dangerous-files.sh",
+        "description": "Block secrets and dangerous files from being committed"
+      }
+    ]
+  }
+}

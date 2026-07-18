@@ -26,7 +26,7 @@ export default function EvidencePage() {
       const fd = new FormData();
       fd.append("file", file);
       fd.append("evidenceType", "DOCUMENT");
-      await api.upload("/api/v1/evidence", fd);
+      await api.upload("/api/v1/evidence/upload", fd);
     }
     refetch();
   };

@@ -35,6 +35,7 @@ public class CircularService {
     private final RegulatorySourceRepository sourceRepository;
     private final DocumentVersionRepository docVersionRepository;
     private final ExtractedTextRepository extractedTextRepository;
+    private final TenantRepository tenantRepository;
     private final AuditService auditService;
     private final RestTemplate restTemplate;
 
@@ -45,11 +46,13 @@ public class CircularService {
                            RegulatorySourceRepository sourceRepository,
                            DocumentVersionRepository docVersionRepository,
                            ExtractedTextRepository extractedTextRepository,
+                           TenantRepository tenantRepository,
                            AuditService auditService, RestTemplate restTemplate) {
         this.circularRepository = circularRepository;
         this.sourceRepository = sourceRepository;
         this.docVersionRepository = docVersionRepository;
         this.extractedTextRepository = extractedTextRepository;
+        this.tenantRepository = tenantRepository;
         this.auditService = auditService;
         this.restTemplate = restTemplate;
     }
@@ -104,6 +107,27 @@ public class CircularService {
         }
     }
 
+    public void triggerExtraction(UUID circularId) {
+        Circular circular = circularRepository.findById(circularId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        var docVersion = docVersionRepository.findFirstByCircularIdOrderByVersionNumberDesc(circularId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No document version found"));
+
+        try {
+            restTemplate.postForEntity(aiServiceUrl + "/extract-text",
+                Map.of("document_version_id", docVersion.getId().toString(),
+                       "file_path", docVersion.getFilePath()),
+                String.class);
+
+            circular.setStatus(CircularStatus.DOWNLOADED);
+            circularRepository.save(circular);
+            log.info("extraction_triggered circular={}", circularId);
+        } catch (Exception e) {
+            log.error("extraction_trigger_failed circular={} error={}", circularId, e.getMessage());
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "AI service unavailable");
+        }
+    }
+
     @Transactional
     public void handleCrawlResults(CrawlResultCallback callback) {
         RegulatorySource source = sourceRepository.findById(callback.getSourceId())
@@ -127,11 +151,59 @@ public class CircularService {
                         .build();
                 circularRepository.save(c);
                 log.info("new_circular_detected title={} source={}", c.getTitle(), source.getSlug());
+
+                if (parsed.getPdfUrl() != null) {
+                    try {
+                        restTemplate.postForEntity(aiServiceUrl + "/download-pdf",
+                            Map.of("circular_id", c.getId().toString(),
+                                   "pdf_url", parsed.getPdfUrl(),
+                                   "language", c.getLanguage().name()),
+                            String.class);
+                        log.info("pdf_download_triggered circular={} url={}", c.getId(), parsed.getPdfUrl());
+                    } catch (Exception e) {
+                        log.warn("pdf_download_trigger_failed circular={} error={}", c.getId(), e.getMessage());
+                    }
+                }
             } else {
                 Circular c = existing.get();
                 c.setLastSeenAt(Instant.now());
                 circularRepository.save(c);
             }
+        }
+    }
+
+    @Transactional
+    public void handlePdfDownloaded(PdfDownloadCallback callback) {
+        Circular circular = circularRepository.findById(callback.getCircularId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        int nextVersion = docVersionRepository.findByCircularIdOrderByVersionNumberDesc(callback.getCircularId())
+                .stream().mapToInt(DocumentVersion::getVersionNumber).max().orElse(0) + 1;
+
+        DocumentVersion dv = DocumentVersion.builder()
+                .circularId(callback.getCircularId())
+                .versionNumber(nextVersion)
+                .filePath(callback.getFilePath())
+                .fileName(callback.getFileName())
+                .sha256Hash(callback.getSha256Hash())
+                .fileSize(callback.getFileSize())
+                .language(Language.valueOf(callback.getLanguage() != null ? callback.getLanguage().toUpperCase() : "EN"))
+                .contentType("application/pdf")
+                .build();
+        docVersionRepository.save(dv);
+
+        circular.setStatus(CircularStatus.DOWNLOADED);
+        circularRepository.save(circular);
+        log.info("pdf_downloaded circular={} version={}", callback.getCircularId(), nextVersion);
+
+        // Auto-trigger text extraction
+        try {
+            restTemplate.postForEntity(aiServiceUrl + "/extract-text",
+                Map.of("document_version_id", dv.getId().toString(), "file_path", dv.getFilePath()),
+                String.class);
+            log.info("auto_extraction_triggered circular={}", callback.getCircularId());
+        } catch (Exception e) {
+            log.warn("auto_extraction_trigger_failed circular={}", callback.getCircularId());
         }
     }
 
@@ -157,6 +229,26 @@ public class CircularService {
             circularRepository.save(circular);
         }
         log.info("text_extracted circular={} status={}", docVersion.getCircularId(), callback.getStatus());
+
+        if ("COMPLETED".equals(callback.getStatus()) && callback.getFullText() != null && !callback.getFullText().isBlank()) {
+            try {
+                var tenants = tenantRepository.findAll();
+                if (!tenants.isEmpty()) {
+                    UUID tenantId = tenants.get(0).getId();
+                    Circular circular2 = circularRepository.findById(docVersion.getCircularId()).orElse(null);
+                    restTemplate.postForEntity(aiServiceUrl + "/extract-obligations",
+                        Map.of("circular_id", docVersion.getCircularId().toString(),
+                               "tenant_id", tenantId.toString(),
+                               "text", callback.getFullText().substring(0, Math.min(8000, callback.getFullText().length())),
+                               "circular_number", circular2 != null ? String.valueOf(circular2.getCircularNumber()) : "",
+                               "department", circular2 != null ? String.valueOf(circular2.getDepartment()) : ""),
+                        String.class);
+                    log.info("obligation_extraction_triggered circular={}", docVersion.getCircularId());
+                }
+            } catch (Exception e) {
+                log.warn("obligation_extraction_trigger_failed circular={} error={}", docVersion.getCircularId(), e.getMessage());
+            }
+        }
     }
 
     public CircularResponse toResponse(Circular c) {
