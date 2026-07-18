@@ -36,6 +36,7 @@ app:
     refresh-token-expiry-days: ${JWT_REFRESH_EXPIRY:7}
   ai-service:
     base-url: ${AI_SERVICE_URL:http://localhost:8000}
+  internal-api-key: ${INTERNAL_API_KEY:dev-internal-key-change-in-production}
   storage:
     local-path: ${STORAGE_PATH:./storage}
   cors:

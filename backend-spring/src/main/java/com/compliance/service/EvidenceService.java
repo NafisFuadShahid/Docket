@@ -75,7 +75,8 @@ public class EvidenceService {
             String hash = sha256(content);
             String dir = storagePath + "/evidence/" + tenantId;
             Files.createDirectories(Paths.get(dir));
-            String filePath = dir + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+            String safeName = Paths.get(file.getOriginalFilename()).getFileName().toString();
+            String filePath = dir + "/" + UUID.randomUUID() + "_" + safeName;
             Files.write(Paths.get(filePath), content);
 
             EvidenceFile ef = EvidenceFile.builder()
@@ -83,7 +84,7 @@ public class EvidenceService {
                     .taskId(request.getTaskId())
                     .obligationId(request.getObligationId())
                     .filePath(filePath)
-                    .fileName(file.getOriginalFilename())
+                    .fileName(safeName)
                     .contentType(file.getContentType())
                     .fileSize((int) file.getSize())
                     .sha256Hash(hash)

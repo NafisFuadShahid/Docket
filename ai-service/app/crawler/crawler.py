@@ -22,7 +22,10 @@ class RegulatoryCrawler:
 
     def _is_allowed(self, url: str) -> bool:
         parsed = urlparse(url)
-        return any(parsed.hostname and parsed.hostname.endswith(d) for d in self.allowed_domains)
+        host = parsed.hostname
+        if not host:
+            return False
+        return any(host == d or host.endswith("." + d) for d in self.allowed_domains)
 
     async def _rate_limited_get(self, client: httpx.AsyncClient, url: str) -> httpx.Response:
         if not self._is_allowed(url):

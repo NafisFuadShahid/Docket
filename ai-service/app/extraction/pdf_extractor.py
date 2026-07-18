@@ -1,11 +1,29 @@
 from pathlib import Path
 
+from app.core.config import settings
 from app.core.logging import logger
 from app.schemas.models import ExtractionResult
 
 
+def _is_safe_path(file_path: str) -> bool:
+    try:
+        resolved = Path(file_path).resolve()
+        storage = Path(settings.STORAGE_PATH).resolve()
+        return str(resolved).startswith(str(storage))
+    except (ValueError, OSError):
+        return False
+
+
 def extract_text_from_pdf(file_path: str, document_version_id: str) -> ExtractionResult:
     """Extract text from PDF using pdfplumber. Falls back to NEEDS_MANUAL_REVIEW if no text found."""
+    if not _is_safe_path(file_path):
+        logger.warning("path_traversal_blocked", path=file_path)
+        return ExtractionResult(
+            document_version_id=document_version_id,
+            status="FAILED",
+            error_message="Invalid file path",
+        )
+
     try:
         import pdfplumber
     except ImportError:

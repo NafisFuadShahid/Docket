@@ -29,6 +29,7 @@ services:
       APP_JWT_ACCESS_TOKEN_EXPIRATION: 1800000
       APP_JWT_REFRESH_TOKEN_EXPIRATION: 604800000
       APP_STORAGE_LOCAL_PATH: /app/storage
+      APP_INTERNAL_API_KEY: "${INTERNAL_API_KEY:-dev-internal-key-change-in-production}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -46,6 +47,7 @@ services:
       AI_API_BASE: "https://api.groq.com/openai/v1"
       AI_MODEL: "llama-3.3-70b-versatile"
       STORAGE_PATH: /app/storage
+      INTERNAL_API_KEY: "${INTERNAL_API_KEY:-dev-internal-key-change-in-production}"
       CRAWLER_RATE_LIMIT: "2.0"
       CRAWLER_TIMEOUT: "30"
     volumes:

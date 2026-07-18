@@ -15,6 +15,8 @@ from app.schemas.models import (
 
 router = APIRouter()
 
+INTERNAL_HEADERS = {"X-Internal-Api-Key": settings.INTERNAL_API_KEY}
+
 
 @router.get("/health")
 async def health():
@@ -32,6 +34,7 @@ async def crawl_source(source_id: str, request: CrawlRequest, background_tasks: 
                 await client.post(
                     f"{settings.SPRING_BACKEND_URL}/api/v1/internal/crawl-results",
                     json=result.model_dump(),
+                    headers=INTERNAL_HEADERS,
                     timeout=30,
                 )
             logger.info("crawl_callback_sent", source_id=source_id, count=len(result.circulars))
@@ -64,6 +67,7 @@ async def download_pdf(request: DownloadPdfRequest, background_tasks: Background
                 await client.post(
                     f"{settings.SPRING_BACKEND_URL}/api/v1/internal/pdf-downloaded",
                     json=result,
+                    headers=INTERNAL_HEADERS,
                     timeout=30,
                 )
             logger.info("pdf_download_callback_sent", circular_id=request.circular_id)
@@ -85,6 +89,7 @@ async def extract_text(request: ExtractTextRequest, background_tasks: Background
                 await client.post(
                     f"{settings.SPRING_BACKEND_URL}/api/v1/internal/extraction-results",
                     json=result.model_dump(),
+                    headers=INTERNAL_HEADERS,
                     timeout=30,
                 )
             logger.info("extraction_callback_sent", doc_version_id=request.document_version_id, status=result.status)
@@ -110,6 +115,7 @@ async def extract_obligations(request: ExtractObligationsRequest, background_tas
                 await client.post(
                     f"{settings.SPRING_BACKEND_URL}/api/v1/obligations/internal/extraction-callback",
                     json=result.model_dump(),
+                    headers=INTERNAL_HEADERS,
                     timeout=30,
                 )
             logger.info("obligation_callback_sent", circular_id=request.circular_id, count=len(result.obligations))
