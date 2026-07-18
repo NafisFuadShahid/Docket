@@ -18,6 +18,7 @@ export default function AssistantPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const send = async () => {
@@ -28,19 +29,17 @@ export default function AssistantPage() {
     setLoading(true);
 
     try {
-      const res = await api.post<{ response: string; citations: string[] }>(
+      const res = await api.post<{ content: string; citations: Array<{ source: string }>; conversation_id: string }>(
         "/api/v1/assistant/chat",
         {
           message: input,
-          conversationHistory: messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
+          conversation_id: conversationId,
         },
       );
+      if (res.conversation_id) setConversationId(res.conversation_id);
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: res.response, citations: res.citations },
+        { role: "assistant", content: res.content, citations: res.citations?.map((c) => c.source) },
       ]);
     } catch {
       setMessages((prev) => [
