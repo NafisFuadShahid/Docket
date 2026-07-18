@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Shield, Download, Plus, FileText } from "lucide-react";
 
 export default function AuditPacksPage() {
-  const { data: packs, loading, refetch } = useApi<AuditPack[]>("/api/v1/audit/packs");
+  const { data: packs, loading, refetch } = useApi<AuditPack[]>("/api/v1/audit-packs");
   const { data: circulars } = useApi<{ content: Circular[] }>("/api/v1/circulars?size=100");
   const [showGenerate, setShowGenerate] = useState(false);
   const [selectedCircular, setSelectedCircular] = useState("");
@@ -24,7 +24,7 @@ export default function AuditPacksPage() {
     if (!selectedCircular) return;
     setGenerating(true);
     try {
-      await api.post(`/api/v1/audit/packs/generate`, { circularId: selectedCircular });
+      await api.post(`/api/v1/audit-packs/generate`, { circularId: selectedCircular });
       setShowGenerate(false);
       setSelectedCircular("");
       refetch();
@@ -34,7 +34,7 @@ export default function AuditPacksPage() {
   };
 
   const download = async (id: string, title: string) => {
-    const blob = await api.download(`/api/v1/audit/packs/${id}/download`);
+    const blob = await api.download(`/api/v1/audit-packs/${id}/download`);
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `${title}.html`;
