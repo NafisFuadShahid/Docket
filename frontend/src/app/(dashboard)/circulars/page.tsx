@@ -22,8 +22,8 @@ export default function CircularsPage() {
   const path = `/api/v1/circulars?page=${page}&size=20${status !== "ALL" ? `&status=${status}` : ""}${search ? `&search=${search}` : ""}`;
   const { data, loading, refetch } = useApi<Page<Circular>>(path, [page, status, search]);
 
-  const triggerCrawl = async (sourceId: string) => {
-    await api.post(`/api/v1/sources/${sourceId}/crawl`);
+  const triggerCrawlAll = async () => {
+    await api.post("/api/v1/sources/crawl-all");
     refetch();
   };
 
@@ -34,7 +34,7 @@ export default function CircularsPage() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => triggerCrawl("all")}
+          onClick={triggerCrawlAll}
           className="gap-2"
         >
           <RefreshCw className="h-4 w-4" />

@@ -60,8 +60,21 @@ public class DashboardService {
         r.setUnreadAlerts(alertRepository.countByTenantIdAndIsReadFalse(tenantId));
         r.setEvidenceGaps(computeEvidenceGaps(tenantId));
 
+        long approvedObligations = obligationRepository.countByTenantIdAndReviewStatus(tenantId, ReviewStatus.APPROVED);
+        long totalObs = r.getTotalObligations();
         long totalTasks = r.getTotalTasks();
-        r.setComplianceScore(totalTasks > 0 ? (double) r.getCompletedTasks() / totalTasks * 100 : 100.0);
+        double obligationScore = totalObs > 0 ? (double) approvedObligations / totalObs * 100 : 0;
+        double taskScore = totalTasks > 0 ? (double) r.getCompletedTasks() / totalTasks * 100 : 0;
+        r.setApplicableObligations(approvedObligations);
+        if (totalObs == 0 && totalTasks == 0) {
+            r.setComplianceScore(0);
+        } else if (totalObs == 0) {
+            r.setComplianceScore(taskScore);
+        } else if (totalTasks == 0) {
+            r.setComplianceScore(obligationScore);
+        } else {
+            r.setComplianceScore(obligationScore * 0.6 + taskScore * 0.4);
+        }
 
         r.setObligationStats(obligationService.getDashboardStats());
         r.setTaskStats(taskService.getDashboardStats());

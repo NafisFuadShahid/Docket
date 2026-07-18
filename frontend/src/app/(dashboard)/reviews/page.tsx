@@ -106,17 +106,19 @@ export default function ReviewsPage() {
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 text-emerald-600"
-                            onClick={() => { setSelected(ob); setNotes(""); }}
+                            title="Quick approve"
+                            onClick={async () => { await api.put(`/api/v1/obligations/${ob.id}/review`, { action: "approve" }); refetch(); }}
                           >
                             <CheckCircle className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-rose-600"
+                            className="h-7 w-7 text-muted-foreground"
+                            title="Review details"
                             onClick={() => { setSelected(ob); setNotes(""); }}
                           >
-                            <XCircle className="h-4 w-4" />
+                            <Edit className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>

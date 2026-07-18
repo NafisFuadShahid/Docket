@@ -2,7 +2,7 @@
 
 import { useApi } from "@/lib/hooks";
 import { api } from "@/lib/api";
-import type { Alert } from "@/types";
+import type { Alert, Page } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,8 @@ const SEVERITY_ICON: Record<string, React.ElementType> = {
 };
 
 export default function AlertsPage() {
-  const { data: alerts, loading, refetch } = useApi<Alert[]>("/api/v1/alerts");
+  const { data, loading, refetch } = useApi<Page<Alert>>("/api/v1/alerts?size=100");
+  const alerts = data?.content;
 
   const markRead = async (id: string) => {
     await api.put(`/api/v1/alerts/${id}/read`);

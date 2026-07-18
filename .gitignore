@@ -9,3 +9,7 @@ build/
 .gradle/
 node_modules/
 .next/
+.claude/
+CLAUDE.md
+AGENTS.md
+docs/superpowers/

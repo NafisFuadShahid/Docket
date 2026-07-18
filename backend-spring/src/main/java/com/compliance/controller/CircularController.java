@@ -35,9 +35,19 @@ public class CircularController {
         return ResponseEntity.accepted().build();
     }
 
+    @PostMapping("/sources/crawl-all")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','COMPLIANCE_ADMIN')")
+    public ResponseEntity<Void> triggerCrawlAll() {
+        circularService.triggerCrawlAll();
+        return ResponseEntity.accepted().build();
+    }
+
     @GetMapping("/circulars")
-    public ResponseEntity<Page<CircularResponse>> listCirculars(@PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(circularService.listCirculars(pageable));
+    public ResponseEntity<Page<CircularResponse>> listCirculars(
+            @PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(circularService.listCirculars(pageable, status, search));
     }
 
     @GetMapping("/circulars/{id}")

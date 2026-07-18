@@ -14,8 +14,15 @@ import java.util.UUID;
 
 public interface CircularRepository extends JpaRepository<Circular, UUID>, JpaSpecificationExecutor<Circular> {
     Optional<Circular> findBySourceIdAndCircularNumber(UUID sourceId, String circularNumber);
-    List<Circular> findByStatus(CircularStatus status);
     List<Circular> findBySourceId(UUID sourceId);
+
+    Page<Circular> findByStatus(CircularStatus status, Pageable pageable);
+
+    @Query("SELECT c FROM Circular c WHERE LOWER(c.title) LIKE :search OR LOWER(c.circularNumber) LIKE :search")
+    Page<Circular> findBySearch(String search, Pageable pageable);
+
+    @Query("SELECT c FROM Circular c WHERE c.status = :status AND (LOWER(c.title) LIKE :search OR LOWER(c.circularNumber) LIKE :search)")
+    Page<Circular> findByStatusAndSearch(CircularStatus status, String search, Pageable pageable);
 
     @Query("SELECT c FROM Circular c WHERE c.sourceId = :sourceId AND c.title = :title")
     Optional<Circular> findBySourceIdAndTitle(UUID sourceId, String title);

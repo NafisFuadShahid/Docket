@@ -57,7 +57,14 @@ public class CircularService {
         this.restTemplate = restTemplate;
     }
 
-    public Page<CircularResponse> listCirculars(Pageable pageable) {
+    public Page<CircularResponse> listCirculars(Pageable pageable, String status, String search) {
+        if (status != null && !status.isBlank() && search != null && !search.isBlank()) {
+            return circularRepository.findByStatusAndSearch(CircularStatus.valueOf(status), "%" + search.toLowerCase() + "%", pageable).map(this::toResponse);
+        } else if (status != null && !status.isBlank()) {
+            return circularRepository.findByStatus(CircularStatus.valueOf(status), pageable).map(this::toResponse);
+        } else if (search != null && !search.isBlank()) {
+            return circularRepository.findBySearch("%" + search.toLowerCase() + "%", pageable).map(this::toResponse);
+        }
         return circularRepository.findAll(pageable).map(this::toResponse);
     }
 
@@ -93,6 +100,17 @@ public class CircularService {
 
     public List<RegulatorySource> listSources() {
         return sourceRepository.findAll();
+    }
+
+    public void triggerCrawlAll() {
+        for (RegulatorySource source : sourceRepository.findAll()) {
+            try {
+                restTemplate.postForEntity(aiServiceUrl + "/crawl/" + source.getId(), Map.of("source_url", source.getBaseUrl(), "source_type", source.getSourceType().name()), String.class);
+                log.info("crawl_triggered source={} type={}", source.getSlug(), source.getSourceType());
+            } catch (Exception e) {
+                log.warn("crawl_trigger_failed source={} error={}", source.getSlug(), e.getMessage());
+            }
+        }
     }
 
     public void triggerCrawl(UUID sourceId) {

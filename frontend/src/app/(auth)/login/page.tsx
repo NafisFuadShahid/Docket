@@ -35,9 +35,9 @@ function LoginForm() {
       <Card className="w-full max-w-sm">
         <CardHeader className="space-y-1 text-center">
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600 text-white text-lg font-bold">
-            C
+            D
           </div>
-          <h1 className="text-xl font-semibold">ComplianceOS</h1>
+          <h1 className="text-xl font-semibold">Docket</h1>
           <p className="text-sm text-muted-foreground">Bangladesh Banking Compliance Platform</p>
         </CardHeader>
         <CardContent>
